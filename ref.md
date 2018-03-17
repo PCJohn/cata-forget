@@ -22,6 +22,10 @@ Other implementations:
 
 [Catastrophic forgetting in connectionist networks](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.469.8422&rep=rep1&type=pdf)
 
+[Optimal Brain Damage](http://yann.lecun.com/exdb/publis/pdf/lecun-90b.pdf)
+
+[Learning Without Forgetting](https://arxiv.org/abs/1606.09282)
+
 [Wikipedia: Catastrophic interference](https://en.wikipedia.org/wiki/Catastrophic_interference)
 
 [ Synaptic sampling: A connection between PSP variability and uncertainty explains neurophysiological observations](https://arxiv.org/abs/1505.04544)
