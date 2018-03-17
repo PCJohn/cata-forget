@@ -33,3 +33,6 @@ Other implementations:
 [Wikipedia: Catastrophic interference](https://en.wikipedia.org/wiki/Catastrophic_interference)
 
 [ Synaptic sampling: A connection between PSP variability and uncertainty explains neurophysiological observations](https://arxiv.org/abs/1505.04544)
+
+
+[Lifelong Deep Learning](http://continuousai.com/)
