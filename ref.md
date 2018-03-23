@@ -32,7 +32,7 @@ on [git](https://github.com/stokesj/EWC))
 
 [Optimal Brain Damage](http://yann.lecun.com/exdb/publis/pdf/lecun-90b.pdf)
 
-[Learning Without Forgetting](https://arxiv.org/abs/1606.09282https://openreview.net/forum?id=BkQqq0gRb&noteId=HkqVEkTHM)
+[Learning Without Forgetting](https://arxiv.org/abs/1606.09282)
 
 [Continual Learning in Generative Adversarial Nets](https://arxiv.org/abs/1705.08395)
 
