@@ -69,6 +69,11 @@ def exp_ewc_all((x,y),(vx,vy),n_tasks,use_ewc=False,use_dropout=False):
 ds,vds = mnist.load()
 x,y = map(np.float32,zip(*ds))
 vx,vy = map(np.float32,zip(*vds))
+#x /= 255.
+#y /= 255.
+#vx /= 255.
+#vy /= 255.
+#print np.max(x)
 print x.shape,y.shape,'--',vx.shape,vy.shape
 
 #print '***** Plain *****'
@@ -78,7 +83,8 @@ print x.shape,y.shape,'--',vx.shape,vy.shape
 
 num_tasks = 6 
 for use_ewc in [True,False]:
-    for use_dropout in [False,True]:
+    #for use_dropout in [False,False]:
+        use_dropout = True
         print '*****','Tasks:',num_tasks,'EWC:',use_ewc,'Dropout:',use_dropout,'*****'
         #sess = start_sess()
         exp_ewc_all((x,y),(vx,vy),num_tasks,use_ewc=use_ewc,use_dropout=use_dropout)
