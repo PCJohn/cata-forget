@@ -17,8 +17,8 @@
 
 [Overcoming catastrophic forgetting in neural networks](https://arxiv.org/abs/1612.00796)
 ([Supporting information](http://www.pnas.org/content/suppl/2017/03/14/1611835114.DCSupplemental/pnas.201611835SI.pdf),[blog](https://rylanschaeffer.github.io/content/research/overcoming_catastrophic_forgetting/main.html)
-[posts](https://deepmind.com/blog/enabling-continual-learning-in-neural-networks/)
-[reddit](https://www.reddit.com/r/MachineLearning/comments/60covg/d_explanation_of_deepminds_overcoming/)
+[posts](https://deepmind.com/blog/enabling-continual-learning-in-neural-networks/), 
+[reddit](https://www.reddit.com/r/MachineLearning/comments/60covg/d_explanation_of_deepminds_overcoming/), 
 
 [other](https://github.com/ariseff/overcoming-catastrophic)
 [implementations](https://github.com/okdshin/chainer-EWC)
