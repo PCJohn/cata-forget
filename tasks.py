@@ -1,4 +1,4 @@
-#import cv2
+import cv2
 import numpy as np
 
 def permute(ds,vds):
@@ -11,11 +11,12 @@ def permute(ds,vds):
     np.random.shuffle(rp)
     np.random.shuffle(cp)
     tds,tvds = [],[]
-    for x,y in ds:
-        #cv2.imshow('help',x[:,rp,:].transpose(2,1,0))
-        #cv2.imshow('help2',x[:,:,:].transpose(2,1,0))
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+    for l,(x,y) in enumerate(ds):
+        #if l < 3:
+        #    cv2.imshow('help',x[:,rp,:][:,:,cp].transpose(2,1,0))
+        #    cv2.imshow('help2',x[:,:,:][:,:,:].transpose(2,1,0))
+        #    cv2.waitKey(0)
+        #    cv2.destroyAllWindows()
         tds.append((x[:,rp,:][:,:,cp],y))
     for vx,vy in vds:
         tvds.append((vx[:,rp,:][:,:,cp],vy))

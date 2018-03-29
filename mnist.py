@@ -29,6 +29,7 @@ def load():
                 img = img[...,np.newaxis]
             if channel_first == True:
                 img = img.transpose(2,1,0)
+            img = np.float32(img)/255.
             ds.append((img,lab))
         for s in flist[train_count:train_count+val_count]:
             if col == True:
@@ -38,6 +39,7 @@ def load():
                 img = img[...,np.newaxis]
             if channel_first == True:
                 img = img.transpose(2,1,0)
+            img = np.float32(img)/255.
             vds.append((img,lab))
     random.shuffle(ds)
     random.shuffle(vds)

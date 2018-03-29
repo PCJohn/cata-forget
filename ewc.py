@@ -5,9 +5,6 @@ import numpy as np
 import random
 import tensorflow as tf
 
-"""import mnist
-import tasks
-"""
 def start_sess():
     config = tf.ConfigProto()
     sess = tf.Session(config=config)
@@ -23,9 +20,9 @@ class FullyConn():
         self.lr = 1e-3
         self.eps = 1e-8
         self.bz = 200
-        self.epch = 1000
+        self.epch = 1300
         self.dropout = 0.5 #Actually 1-dropout
-        self.lmbda = 800
+        self.lmbda = 400
  
         self.sess = None #start_sess()
         self.x = tf.placeholder(tf.float32,shape=[None,1,28,28])
@@ -36,32 +33,29 @@ class FullyConn():
 
         d = 28*28*1
         out = tf.reshape(self.x,[-1,d])
-        
-        #w1 = weight([d,2000])
-        #b1 = bias([2000])
-        w1 = tf.get_variable('w1',shape=[d,800],initializer=tf.contrib.layers.xavier_initializer())
-        b1 = tf.get_variable('b1',shape=[800],initializer=tf.zeros_initializer())
+        #out = tf.nn.dropout(out,0.8)
+
+        w1 = tf.get_variable('w1',shape=[d,400],initializer=tf.contrib.layers.xavier_initializer())
+        b1 = tf.get_variable('b1',shape=[400],initializer=tf.zeros_initializer())
         out = tf.nn.relu(tf.matmul(out,w1)+b1)
         out = tf.nn.dropout(out,self.keep_prob)
         
-        #w2 = weight([2000,2000])
-        #b2 = bias([2000])
-        w2 = tf.get_variable('w2',shape=[800,800],initializer=tf.contrib.layers.xavier_initializer())
-        b2 = tf.get_variable('b2',shape=[800],initializer=tf.zeros_initializer())
+        w2 = tf.get_variable('w2',shape=[400,400],initializer=tf.contrib.layers.xavier_initializer())
+        b2 = tf.get_variable('b2',shape=[400],initializer=tf.zeros_initializer())
         out = tf.nn.relu(tf.matmul(out,w2)+b2)
         out = tf.nn.dropout(out,self.keep_prob)
         
-        #w3 = weight([2000,10])
-        #b3 = bias([10])
-        w3 = tf.get_variable('w3',shape=[800,10],initializer=tf.contrib.layers.xavier_initializer())
+        w3 = tf.get_variable('w3',shape=[400,10],initializer=tf.contrib.layers.xavier_initializer())
         b3 = tf.get_variable('b3',shape=[10],initializer=tf.zeros_initializer())
         self.out = tf.matmul(out,w3)+b3
 
         self.params = [w1,b1,w2,b2,w3,b3]
-        self.loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(onehot_labels=self.y,logits=self.out))
-        self.ewc_loss = tf.constant(0.0,shape=[])
+        #self.loss = tf.reduce_mean(tf.losses.softmax_cross_entropy(onehot_labels=self.y,logits=self.out))
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y,logits=self.out))
+        self.ewc_loss = tf.Variable(0,tf.float32) #tf.constant(0.0,shape=[])
+        #final_loss = 0.5*self.lmbda*self.ewc_loss+self.loss
         self.train_step = tf.train.AdamOptimizer(learning_rate=self.learning_rate,epsilon=self.eps).minimize(self.loss)
-        #self.train_step = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.loss)
+        #self.train_step = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
         self.fisher = None
         self.n_tasks = 0
 
@@ -70,66 +64,61 @@ class FullyConn():
         self.sample_loss = tf.log(prob_list[0,class_index])
         self.sample_grad = tf.gradients(self.sample_loss,self.params)
         
-        #self.sess.run(tf.global_variables_initializer())
-
-    def augment_loss_ewc(self,x,sample_count=250):
+    def augment_loss_ewc(self,x,sample_count=1000):
         anchor_var_val = self.sess.run(self.params)
         anchor = [np.array(v,copy=True) for v in anchor_var_val]
-        #Find Fisher matrices
-        M = len(self.params)
         self.fisher = [np.zeros(v.get_shape().as_list()) for v in self.params]
-        #t = current_milli_time()
+        
+        M = len(self.params)
         sample_ind = np.random.randint(0,x.shape[0],sample_count)
         for i in range(sample_count):
-            #sample = x[np.random.randint(x.shape[0])]
             sample = x[sample_ind[i]]
-            #sample_grad = tf.gradients(self.sample_loss,self.params)
             grad = self.sess.run(self.sample_grad,feed_dict={self.x:np.array([sample]),self.keep_prob:1})
-            #self.sess.run(sample_grad)
             for v in range(M):
-                #print '>>>',np.max(grad[v])
-                self.fisher[v] += np.square(grad[v])#/float(sample_count)
-        #print current_milli_time()-t
-        self.ewc_loss = 0
+                self.fisher[v] += np.square(grad[v])
+        if self.n_tasks == 0:
+            self.ewc_loss = 0
+        #self.ewc_loss = 0
         for v in range(M):
             self.fisher[v] = self.fisher[v]/float(sample_count)
-            self.ewc_loss += tf.reduce_sum(tf.multiply(np.float32(self.fisher[v]),tf.square(self.params[v]-anchor[v])))
-        #self.ewc_loss = tf.reduce_sum([tf.reduce_sum(tf.multiply(np.float32(f),tf.square(p-a))) for f,p,a in zip(self.fisher,self.params,anchor)])
-        final_loss = (self.lmbda/2.)*self.ewc_loss+self.loss
-        #self.train_step = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(final_loss)
-        #print [v.name for v in tf.global_variables()]
-        #self.train_step = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(final_loss)
-        #self.sess.run([v.initializer for v in tf.global_variables() if (('Adam' in v.name)|('beta1' in v.name)|('beta2' in v.name))])
-        self.sess.run([v.initializer for v in tf.global_variables() if (('beta1' in v.name)|('beta2' in v.name))])
+            self.ewc_loss += 0.5*self.lmbda*tf.reduce_sum(tf.multiply(np.float32(self.fisher[v]),tf.square(self.params[v]-anchor[v])))
+        final_loss = tf.add(self.ewc_loss,self.loss)
+        self.train_step = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(final_loss)
+        #self.train_step = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(final_loss)
+        k = tf.variables_initializer(
+            [v for v in tf.global_variables() if v.name.split(':')[0] in set(self.sess.run(tf.report_uninitialized_variables()))
+            ])
+        self.sess.run(k)
+
         del anchor
+        self.n_tasks += 1
 
     def simple_hyperopt(self,x,y,vx,vy,use_ewc=False):
-        #just train and revert
         saver = tf.train.Saver()
         tmp_file = 'tmp.ckpt'
         saver.save(self.sess,tmp_file)
         ind = range(x.shape[0])
         best = {'bz':100,'lr':1e-2,'epch':600,'val':0,'loss':999}
-        lr_range = [5e-7,1e-2]
-        r = 15
+        lr_range = [1e-4,1e-2]
+        r = 40
         while r > 0:
-            #t = current_milli_time()
             saver.restore(self.sess,tmp_file)
             e = np.random.random()
             if e < 0.5:
                 lr = best['lr']
             else:
-                lr = np.random.choice(np.arange(lr_range[0],lr_range[1],(lr_range[1]-lr_range[0])/10000.))
+                lr = np.random.choice(np.arange(lr_range[0],lr_range[1],(lr_range[1]-lr_range[0])/100000.))
             e = np.random.random()
             if e < 0.5:
                 epch = best['epch']
             else:
-                epch = int(100+(2000-1000)*np.random.random())
+                epch_range = [1000,6000]
+                epch = int(epch_range[0]+(epch_range[1]-epch_range[0])*np.random.random())
             e = np.random.random()
             if e < 0.5:
                 bz = best['bz']
             else:
-                bz = np.random.choice(range(20,250))
+                bz = np.random.randint(15,300)
             for _ in range(epch):
                 bi = np.random.choice(ind,bz)
                 _,loss,eloss = self.sess.run([self.train_step,self.loss,self.ewc_loss],feed_dict={self.x:x[bi],self.y:y[bi],
@@ -139,7 +128,7 @@ class FullyConn():
                     break
             pvy = self.sess.run(self.out,feed_dict={self.x:vx,self.keep_prob:1})
             val = acc(pvy,vy)
-            print lr,bz,epch,val,loss,self.lmbda/2.,eloss
+            print lr,bz,epch,val,loss,self.lmbda/2.,eloss,eloss-loss
             if val >  best['val']:
                 best['val'] = val
                 best['loss'] = loss
@@ -151,7 +140,6 @@ class FullyConn():
                 if np.isnan(best['loss']):
                     r = 40
                     continue
-            #print current_milli_time()-t
         print 'Hyperparam config:',best
         self.lr = best['lr']
         self.bz = best['bz']
@@ -184,9 +172,9 @@ class FullyConn():
                     print 'Epoch',str(epoch)+': \tloss '+str(loss)+'\tewc '+str(eloss)+' \tval acc '+str(acc(pvy,vy))
         
         if use_ewc == True:
-            self.augment_loss_ewc(x)
+            self.augment_loss_ewc(vx)
         
-        #self.sess.close()
+        #end of train
 
     def test(self,x,y=None):
         py = self.sess.run(self.out,feed_dict={self.x:x,self.keep_prob:1})
