@@ -32,6 +32,8 @@ on [git](https://github.com/stokesj/EWC))
 
 [Optimal Brain Damage](http://yann.lecun.com/exdb/publis/pdf/lecun-90b.pdf)
 
+[Relearning after Damage in Connectionist Networks: Toward a Theory of Rehabilitation](https://www.ncbi.nlm.nih.gov/pubmed/8741976)
+
 [Learning Without Forgetting](https://arxiv.org/abs/1606.09282)
 
 [Continual Learning in Generative Adversarial Nets](https://arxiv.org/abs/1705.08395)
