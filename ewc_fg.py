@@ -20,16 +20,19 @@ class FullyConn():
         self.lr = 1e-3
         self.eps = 1e-8
         self.bz = 200
-        self.epch = 1300
+        self.epch = 1200
         self.dropout = 0.5 #Actually 1-dropout
-        self.lmbda = 400
+        self.lmbda = 200
  
+        self.val_freq = 50
+        self.log_freq = 100
+        
         self.sess = None #start_sess()
         self.x = tf.placeholder(tf.float32,shape=[None,1,28,28])
         self.y = tf.placeholder(tf.float32,shape=[None,10])
         self.keep_prob = tf.placeholder(tf.float32)
         self.learning_rate = tf.placeholder(tf.float32)
-        self.rem = tf.placeholder(tf.float32,shape=[6])
+        #self.rem = tf.placeholder(tf.float32,shape=[6])
 
         d = 28*28*1
         out = tf.reshape(self.x,[-1,d])
@@ -61,8 +64,9 @@ class FullyConn():
         self.fish_ph = [tf.placeholder(tf.float32,shape=v.get_shape().as_list()) for v in self.params]
         self.anch_ph = [tf.placeholder(tf.float32,shape=v.get_shape().as_list()) for v in self.params]
         #REM VEC here!
-        self.rem_vec = tf.placeholder(tf.float32,shape=(6,))
+        #self.rem_vec = tf.placeholder(tf.float32,shape=(6,))
         self.fisher = [np.zeros(v.get_shape().as_list()) for v in self.params]
+        self.task_F = []
 
         prob_list = tf.nn.softmax(self.out)
         class_index = tf.to_int32(tf.multinomial(tf.log(prob_list),1)[0][0])
@@ -70,7 +74,7 @@ class FullyConn():
         self.sample_grad = tf.gradients(self.sample_loss,self.params)
         
     #Update Fisher and anchors on new task
-    def new_fish_anch(self,x,sample_count=1000):
+    def new_fish_anch(self,x,rem_vec,sample_count=1000):
         anchor_var_val = self.sess.run(self.params)
         self.anchor = [np.array(v,copy=True) for v in anchor_var_val]
         F = [np.zeros(v.get_shape().as_list()) for v in self.params]
@@ -83,10 +87,30 @@ class FullyConn():
                 F[v] += np.square(grad[v])
         for v in range(M):
             F[v] = np.float32(F[v])/float(sample_count)
+        
+        task_F = []
         for v in range(M):
-            #self.fisher[v] += np.float32(F[v])
-            self.fisher[v] += F[v]
-        #self.indiv_fisher.append(F)
+            task_F.append(F[v])
+        self.task_F.append(task_F)
+
+        """recon = True
+        if recon == False:
+            for v in range(M):
+                self.fisher[v] += F[v]
+        else:
+            self.fisher = [np.zeros(v.get_shape().as_list()) for v in self.params]
+            print '>>>',rem_vec
+            for r in range(self.n_tasks+1):
+                for v in range(M):
+                    self.fisher[v] += rem_vec[r]*self.task_F[r][v]
+                    #self.fisher[v] = self.task_F[r][v]
+                #print 'Task',r,'--',np.max(self.task_F[r][v])
+        """
+        
+        self.fisher = [np.zeros(v.get_shape().as_list()) for v in self.params]
+        for r in range(self.n_tasks+1):
+            for v in range(M):
+                self.fisher[v] += rem_vec[r]*self.task_F[r][v]
         self.n_tasks += 1
     
     def setup_ewc_loss(self):
@@ -109,7 +133,7 @@ class FullyConn():
         ind = range(x.shape[0])
         best = {'bz':100,'lr':1e-2,'epch':600,'val':0,'loss':999}
         lr_range = [1e-4,1e-3]
-        r = 40
+        r = 20
         while r > 0:
             saver.restore(self.sess,tmp_file)
             e = np.random.random()
@@ -121,7 +145,7 @@ class FullyConn():
             if e < 0.5:
                 epch = best['epch']
             else:
-                epch_range = [0,2000]
+                epch_range = [1500,3000]
                 epch = int(epch_range[0]+(epch_range[1]-epch_range[0])*np.random.random())
             e = np.random.random()
             if e < 0.5:
@@ -130,8 +154,13 @@ class FullyConn():
                 bz = np.random.randint(15,300)
             for _ in range(epch):
                 bi = np.random.choice(ind,bz)
-                _,loss,eloss = self.sess.run([self.train_step,self.loss,self.ewc_loss],feed_dict={self.x:x[bi],self.y:y[bi],
-                                                                   self.keep_prob:(1-self.dropout),self.learning_rate:lr,self.rem:rem_vec})
+                feed_dict={self.x:x[bi],self.y:y[bi],self.keep_prob:(1-self.dropout),self.learning_rate:lr}
+                first_task = (self.n_tasks == 0)
+                if use_ewc & (not first_task):
+                    for v in range(len(self.params)):
+                        feed_dict.update({self.fish_ph[v]:self.fisher[v]})
+                        feed_dict.update({self.anch_ph[v]:self.anchor[v]})
+                _,loss,eloss = self.sess.run([self.train_step,self.loss,self.ewc_loss],feed_dict=feed_dict)
                 if np.isnan(loss):
                     lr_range[1] = lr
                     break
@@ -158,13 +187,13 @@ class FullyConn():
         os.remove(tmp_file+'.index')
         os.remove(tmp_file+'.data-00000-of-00001')
 
-    def train(self,train,rem_vec,val=None,log=True,use_ewc=False):
+    def train(self,train,rem_vec,val_list=[],log=True,use_ewc=False):
         if self.sess == None:
             self.sess = start_sess()
             self.sess.run(tf.global_variables_initializer())
         x,y = train
-        if val != None:
-            vx,vy = val
+        #if len(val) > 0:
+        #    vx,vy = val
         ind = range(x.shape[0])
         if log == True:
             print 'Hyperparameter search...'
@@ -172,25 +201,31 @@ class FullyConn():
         if log == True:
             print 'Training...'
         first_task = (self.n_tasks == 0)
+        train_trace = []
+        val_trace = [[] for _ in val_list]
         for epoch in range(self.epch):
             bi = np.random.choice(ind,self.bz) #batch index
             feed_dict = {self.x:x[bi],self.y:y[bi],self.keep_prob:(1-self.dropout),self.learning_rate:self.lr}
-            feed_dict.update({self.rem:rem_vec})
+            #feed_dict.update({self.rem:rem_vec})
             if use_ewc & (not first_task):
                 for v in range(len(self.params)):
                     feed_dict.update({self.fish_ph[v]:self.fisher[v]})
                     feed_dict.update({self.anch_ph[v]:self.anchor[v]})
             _,loss,eloss,py = self.sess.run([self.train_step,self.loss,self.ewc_loss,self.out],feed_dict=feed_dict)
-            if epoch%100 == 0:
-                pvy = self.sess.run(self.out,feed_dict={self.x:vx,self.keep_prob:1})
+            if epoch%self.val_freq == 0:
+                for j,(v_x,v_y) in enumerate(val_list):
+                    pvy = self.sess.run(self.out,feed_dict={self.x:v_x,self.keep_prob:1})
+                    vacc = acc(pvy,v_y)
+                    val_trace[j].append(vacc)
+            if epoch%self.log_freq == 0:
                 if log == True:
-                    print 'Epoch',str(epoch)+': \tloss '+str(loss)+'\tewc '+str(eloss)+' \tval acc '+str(acc(pvy,vy))
-        self.epch += 150
+                    print 'Epoch',str(epoch)+': \tloss '+str(loss)+'\tewc '+str(eloss)+' \tval acc '+str(vacc)#str(acc(pvy,vy))
+        #self.epch += 350
         if use_ewc == True:
             if first_task:
                 self.setup_ewc_loss()
-            self.new_fish_anch(vx)
-
+            self.new_fish_anch(val_list[-1][0],rem_vec)
+        return (train_trace,val_trace)
         #end of train
 
     def test(self,x,y=None):

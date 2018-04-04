@@ -10,7 +10,7 @@ val_count = 1000
 channel_first = True
 col = False
 
-def load():
+def load(shuffle=True,train_count=3000,val_count=1000,channel_first=True,col=False):
     ds = []
     vds = []
     classes = os.listdir(path)
@@ -41,8 +41,9 @@ def load():
                 img = img.transpose(2,1,0)
             img = np.float32(img)/255.
             vds.append((img,lab))
-    random.shuffle(ds)
-    random.shuffle(vds)
+    if shuffle == True:
+        random.shuffle(ds)
+        random.shuffle(vds)
     #X,Y = zip(*ds)
     return (ds,vds)
 
