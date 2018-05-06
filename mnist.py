@@ -1,3 +1,7 @@
+# Module to load the MNIST dataset from file
+#
+# Author: Prithvijit Chakrabarty (prithvichakra@gmail.com)
+
 import os
 import cv2
 import random
@@ -10,12 +14,11 @@ val_count = 1000
 channel_first = True
 col = False
 
-def load(shuffle=True,train_count=3000,val_count=1000,channel_first=True,col=False):
+def load(shuffle=True,train_count=3000,val_count=1000,channel_first=True,col=False,flatten=False):
     ds = []
     vds = []
     classes = os.listdir(path)
     unit = np.diag(np.ones(len(classes)))
-    #blank = np.zeros()
     for n in os.listdir(path):
         n_path = os.path.join(path,n)
         lab = unit[int(n)]
@@ -30,6 +33,8 @@ def load(shuffle=True,train_count=3000,val_count=1000,channel_first=True,col=Fal
             if channel_first == True:
                 img = img.transpose(2,1,0)
             img = np.float32(img)/255.
+            if flatten == True:
+                img = img.flatten()
             ds.append((img,lab))
         for s in flist[train_count:train_count+val_count]:
             if col == True:
@@ -40,17 +45,10 @@ def load(shuffle=True,train_count=3000,val_count=1000,channel_first=True,col=Fal
             if channel_first == True:
                 img = img.transpose(2,1,0)
             img = np.float32(img)/255.
+            if flatten == True:
+                img = img.flatten()
             vds.append((img,lab))
     if shuffle == True:
         random.shuffle(ds)
         random.shuffle(vds)
-    #X,Y = zip(*ds)
     return (ds,vds)
-
-"""ds,vds = load()
-for x,y in ds[:10]:
-    print x.shape
-    cv2.imshow(str(y),x)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-"""
