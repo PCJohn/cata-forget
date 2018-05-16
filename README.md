@@ -6,6 +6,7 @@ Methods to reduce catastrophic interference in neural networks
 
 5 MNIST permutation tasks with EWC+Dropout:
 ![Alt text](res/fc_mnist_ewc_smooth.png?raw=50x50)
+<img src="res/fc_mnist_ewc_smooth.png" width="50">
 
 Same tasks without EWC (only SGD+Dropout):
 ![Alt text](res/fc_mnist_sgd_dropout_smooth.png?raw=50x50)
