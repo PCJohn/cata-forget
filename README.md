@@ -9,23 +9,23 @@ Elastic Weight Consolidation paper reproduction:
 Use a large model (2 hidden layers, 1000 units each):
 
    * 5 permuted MNIST tasks with only SGD+Dropout:
-   <img src="res/fc_mnist_sgd_dropout_smooth.png" width="400">
+   <img src="imgs/fc_mnist_sgd_dropout_smooth.png" width="400">
 
    * Same tasks with EWC:
-   <img src="res/fc_mnist_ewc_smooth.png" width="400">
+   <img src="imgs/fc_mnist_ewc_smooth.png" width="400">
 
 To recreate the permuted MNIST experiments, run `mnist_permute_exp.py` (usage instructions in the script). This will produce the following results:
 
 Saturation behavior: Use a smaller model (2 hidden layers, 100 units each):
 
    * With EWC: Note the drop in accuracy for new tasks as the small model tried to remember all the previous tasks
-![Alt text](res/sat_mnist_ewc_smooth.png?raw=30x30)
+![Alt text](imgs/val_sel_rem.png?raw=30x30)
 
    * Without EWC (SGD+dropout): Plain SGD causes the model to forget all previous tasks
-![Alt text](res/sat_sgd_dropout_smooth.png?=30x30)
+![Alt text](imgs/sat_sgd_dropout_smooth.png?=30x30)
 
-   * Selectively forgetting (here, tasks 0,2,3):
-![Alt text](res/sel_forget_023_smooth.png?=30x30)
+   * Selectively forgetting (here, the "forget policy" was: after task 4, forget tasks 0, 1, 3, 5). Note the drop in validation accuracies for these tasks while the accuracy for task 2 remains the same.
+![Alt text](imgs/val_sel_fgt_0,1,3,5.png?=30x30)
 
 Weight Correlation Matrices:
 1. Without forgetting (remembering all tasks)
