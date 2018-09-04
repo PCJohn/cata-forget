@@ -1,8 +1,13 @@
 # Experiment to demonstrate selective forgetting with permuted MNIST images.
-# Running this file will
 #
-# To modify parameters, see the following:
-# 1. 
+# Usage:
+# 1. Download the MNIST training set folder (trainingSet.tar.gz) from: https://www.kaggle.com/scolianni/mnistasjpg
+# 2. Point to the folder trainingSet (line 6 in mnist.py)
+# 3. Run: python mnist_permute_exp.py
+#
+# To change the forget policy, edit the block in lines 95-105
+#
+# To modify the architecture, edit lines 210-214 
 #
 # Author: Prithvijit Chakrabarty (prithvichakra@gmail.com)
 
@@ -91,12 +96,12 @@ def run_permute_exp(arch,(x,y),(vx,vy),n_tasks,use_ewc=False,use_forget=False,hy
         #rem_vec = 1*np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
         rem_vec = np.ones(n_tasks+1)
         if use_forget == True:
-            if i >= 4:
+            if i >= 4: # from task 4 onwards, forget tasks 0,1,3,5
                 rem_vec[0] = 0
                 rem_vec[1] = 0
                 rem_vec[3] = 0
                 rem_vec[5] = 0
-            print rem_vec
+            print 'Remember vector:',rem_vec
         ##############################
 
         ttrc,vtrc = model.train((tx,ty),head,val_list=val_ds,rem_vec=rem_vec,log=True,use_ewc=use_ewc,hypopt=hypopt)
@@ -104,7 +109,9 @@ def run_permute_exp(arch,(x,y),(vx,vy),n_tasks,use_ewc=False,use_forget=False,hy
         #Display the Fisher matrices for the selected tasks
         if i in show_fish:
             F = model.fisher[2*1]
+            print('\nDisplaying the Fisher Information Matrix for task: '+str(i))
             plt.imshow(F,cmap='OrRd')
+            plt.title('Fisher Information Matrix for task: '+str(i))
             plt.show()
        
         #Save Fisher for the correlation matrices
@@ -145,7 +152,7 @@ def run_permute_exp(arch,(x,y),(vx,vy),n_tasks,use_ewc=False,use_forget=False,hy
                     corr_mat[w][t1,t2] = cx
         for w,lyr in enumerate(wt):
             m = corr_mat[w]
-            plt.title('Layer '+str(lyr))
+            plt.title('Inter-task correlation for layer '+str(lyr)+' weights')
             plt.imshow(m,cmap='OrRd',interpolation='none')
             plt.show()
     
@@ -171,9 +178,9 @@ def run_permute_exp(arch,(x,y),(vx,vy),n_tasks,use_ewc=False,use_forget=False,hy
     axes = plt.gca()
     axes.set_ylim([0,1])
     if use_forget == True:
-        plt.title('Validation with forgetting')
+        plt.title('Validation with the selective forgetting policy')
     else:
-        plt.title('Validation without forgetting')
+        plt.title('Validation without forgetting (remember all tasks)')
     plt.legend(bbox_to_anchor=(1.1,0.3))
     plt.ylabel('Validation accuracy')
     plt.xlabel('Iterations')
@@ -186,9 +193,9 @@ def run_permute_exp(arch,(x,y),(vx,vy),n_tasks,use_ewc=False,use_forget=False,hy
     axes.set_xlim([0,n_tasks])
     axes.set_ylim([0,1])
     if use_forget == True:
-        plt.title('Final validation with forgetting')
+        plt.title('Final validation with the selective forgetting policy')
     else:
-        plt.title('Final validation without forgetting')
+        plt.title('Final validation without forgetting (remember all tasks)')
     plt.xlabel('Task number')
     plt.ylabel('Final validation accuracy')
     plt.show()
@@ -200,21 +207,21 @@ x,y = map(np.float32,zip(*ds))
 vx,vy = map(np.float32,zip(*vds))
 print 'Loaded ds shape:',x.shape,y.shape
 print 'Loaded val ds shape:',vx.shape,vy.shape
-arch = {'in_dim':28*28,
-        'hid':[100,100],
-        'n_out':10,
-        'n_hid':2,
-        'n_head':1}
+arch = {'in_dim':28*28, # input shape
+        'hid':[100,100],# hidden layer dimensions
+        'n_out':10,     # number of output units
+        'n_hid':2,      # number of hidden layers
+        'n_head':1}     # number of output heads
 fraction_to_permute = 1 #Fraction of pixels in images to permute (to generate a new task)
 num_tasks = 10          #Number of tasks
 use_hypopt = False      #Use hyperparameter optimization for every new task
-show_fish = [0,5]       #Display the Fisher info matrix for these tasks
+show_fish = [0,5]       #Visualize the Fisher info matrix for these tasks
 repeat = {} #{1:0,5:0}  #{a:b} will mean tasks a will be a copy of task b
 lmbda = 200             #EWC scaling
-for use_ewc in [True,False]:
-    #print '\t*****','Tasks:',num_tasks,'EWC:',use_ewc,'*****'
+
+for use_ewc in [True,False]: # whether or not to use EWC
     if use_ewc == True:
-        for use_forget in [True,False]:
+        for use_forget in [True,False]: # whether or not to use the selective forget policy
             print '\t*****','Tasks:',num_tasks,'| EWC:',use_ewc,'| Use forget:',use_forget,'*****'
             run_permute_exp(arch,(x,y),(vx,vy),num_tasks,
                             use_ewc=use_ewc,
