@@ -36,8 +36,5 @@ Saturation behavior: Use a smaller model (2 hidden layers, 100 units each):
     <img src="imgs/fin_val_sel_fgt_0,1,3,5.png" width="400" height="250" />
   </p>
 
-
-Weight Correlation Matrices:
-1. Without forgetting (remembering all tasks)
-2. With forgetting
+The script will also display a visualization of the Fisher Information Matrices for selected tasks and show the weight correlation matrices after training on all tasks (the report describes these in detail).
 
