@@ -21,12 +21,16 @@ Saturation behavior: Use a smaller model (2 hidden layers, 100 units each):
    * With EWC: Note the drop in accuracy for new tasks as the small model tried to remember all the previous tasks
 
   <p float="left">
-    <img src="imgs/val_sel_rem.png" width="200" />
-    <img src="imgs/fin_val_rem.png" width="200" />
+    <img src="imgs/val_sel_rem.png" width="400" height="300" />
+    <img src="imgs/fin_val_rem.png" width="400" height="250" />
   </p>
 
    * Without EWC (SGD+dropout): Plain SGD causes the model to forget all previous tasks
 ![Alt text](imgs/sat_sgd_dropout_smooth.png?=30x30)
+  <p float="left">
+    <img src="imgs/sat_sgd_dropout_smooth.png" width="400" height="300" />
+    <img src="imgs/fin_val_fgt.png" width="400" height="250" />
+  </p>
 
    * Selectively forgetting (here, the "forget policy" was: after task 4, forget tasks 0, 1, 3, 5). Note the drop in validation accuracies for these tasks while the accuracy for task 2 remains the same.
 ![Alt text](imgs/val_sel_fgt_0,1,3,5.png?=30x30)
