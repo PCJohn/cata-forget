@@ -180,7 +180,10 @@ def run_permute_exp(arch,(x,y),(vx,vy),n_tasks,use_ewc=False,use_forget=False,hy
     if use_forget == True:
         plt.title('Validation with the selective forgetting policy')
     else:
-        plt.title('Validation without forgetting (remember all tasks)')
+        if use_ewc == True:
+            plt.title('Validation without forgetting (remember all tasks)')
+        else:
+            plt.title('Validation without EWC (plain SGD+Dropout)')
     plt.legend(bbox_to_anchor=(1.1,0.3))
     plt.ylabel('Validation accuracy')
     plt.xlabel('Iterations')
@@ -195,7 +198,10 @@ def run_permute_exp(arch,(x,y),(vx,vy),n_tasks,use_ewc=False,use_forget=False,hy
     if use_forget == True:
         plt.title('Final validation with the selective forgetting policy')
     else:
-        plt.title('Final validation without forgetting (remember all tasks)')
+        if use_ewc == True:
+            plt.title('Final validation without forgetting (remember all tasks)')
+        else:
+            plt.title('Final validation accuracy with forgetting (plain SGD+Dropout)')
     plt.xlabel('Task number')
     plt.ylabel('Final validation accuracy')
     plt.show()
